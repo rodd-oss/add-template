@@ -1,0 +1,53 @@
+{
+  "name": "add-template",
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/js/*",
+    "!packages/js/**/test/**",
+    "!packages/js/**/template/**"
+  ],
+  "devDependencies": {
+    "@eslint/css": "^0.14.1",
+    "@eslint/js": "^9.39.1",
+    "@eslint/json": "^0.14.0",
+    "@eslint/markdown": "^7.5.1",
+    "@types/bun": "latest",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^10.6.2",
+    "globals": "^16.5.0",
+    "husky": "^9.1.7",
+    "jiti": "^2.6.1",
+    "lint-staged": "^16.2.7",
+    "prettier": "3.7.4",
+    "typescript-eslint": "^8.49.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "count-lines": "bun run ./scripts/count-lines.ts",
+    "lint": "bunx eslint"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": [
+        "cargo check --all-targets",
+        "cargo clippy --all-targets -- -D warnings",
+        "cargo fmt --all -- --check"
+      ]
+    }
+  },
+  "lint-staged": {
+    "**/*.{js,mjs,cjs,ts,mts,cts,vue,json,jsonc,json5,md,css}": [
+      "prettier --list-different",
+      "eslint"
+    ]
+  },
+  "dependencies": {
+    "@types/glob": "^9.0.0",
+    "glob": "^13.0.0"
+  }
+}

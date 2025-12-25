@@ -1,0 +1,22 @@
+[workspace]
+resolver = "2"
+members = [
+"packages/rust/*"
+]
+
+[workspace.dependencies]
+
+[workspace.package]
+version = "0.1.0"
+authors = ["Your Name <your.email@example.com>"]
+edition = "2021"
+license = "MIT"
+description = "Agent Driven Development repository template"
+repository = "https://github.com/rodd-oss/add-template"
+readme = "README.md"
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+strip = true

@@ -1,0 +1,11 @@
+[package]
+name = "placeholder"
+version = "0.1.0"
+edition = "2021"
+authors = ["Your Name <your.email@example.com>"]
+license = "MIT"
+description = "Placeholder Rust crate for ADD template"
+repository = "https://github.com/rodd-oss/add-template"
+readme = "README.md"
+
+[dependencies]
