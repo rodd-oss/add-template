@@ -67,6 +67,7 @@ add-template/
 │   └── v1/
 ├── scripts/           # Scripts used for CI/CD or local dev
 │   └── count-lines.ts # Line‑count utility
+├── .ignore            # Opencode specific ignores for tools
 ├── AGENTS.md          # Agent guide for development tools
 └── README.md          # This file
 ```
