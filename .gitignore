@@ -28,6 +28,13 @@ target/
 **/*.rs.bk
 Cargo.lock
 
+# Generated code
+gen/go/*
+gen/python/*
+gen/rust/*
+gen/ts/*
+!gen/**/.gitkeep
+
 # Node
 node_modules/
 npm-debug.log*

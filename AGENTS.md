@@ -7,10 +7,12 @@
 - **Rust check**: `cargo check --all-targets`
 - **Rust lint**: `cargo clippy --all-targets -- -D warnings`
 - **Rust format**: `cargo fmt --all -- --check`
+- **Python lint**: `ruff check`
+- **Python format**: `ruff format --check`
 - **Rust test**: `cargo test` (when tests are added); single test: `cargo test --package <crate> --test <test>`
 - **Go test**: `go test ./...` (if Go packages exist); single test: `go test -run TestName ./path/to/package`
 - **JS/TS test**: `bun test` (when tests are added); single test: `bun test --test-name-pattern <name>`
-- **Pre-commit**: Runs Rust checks automatically
+- **Pre-commit**: Runs checks automatically
 
 ## Code Style Guidelines
 
