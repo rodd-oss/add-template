@@ -4,7 +4,7 @@ A polyglot monorepo template for **Agent-Driven Development (ADD)** with built-i
 
 ## Features
 
-- **Multi‑language workspaces**: Rust (`packages/rust/`), Go (`packages/go/`), Python (`packages/python/`), JavaScript/TypeScript (`packages/js/`, `apps/`)
+- **Multi‑language workspaces**: Rust (`packages/rust/`, `apps/`), Go (`packages/go/`, `apps/`), Python (`packages/python/`, `apps/`), JavaScript/TypeScript (`packages/js/`, `apps/`)
 - **Modern tooling**: ESLint, Prettier, Husky, lint‑staged, TypeScript, Cargo, Go modules, uv (Python)
 - **Pre‑commit hooks**: Automated checks for Rust (`cargo check`, `cargo clippy`, `cargo fmt`)
 - **Line‑count utility**: Script to analyze codebase size and categorize files by line count
@@ -24,6 +24,9 @@ A polyglot monorepo template for **Agent-Driven Development (ADD)** with built-i
 
 ```bash
 bun install
+go mod download
+cargo fetch
+uv sync
 ```
 
 ### Running the line‑count script
