@@ -32,10 +32,10 @@
     "count-lines": "bun run ./scripts/count-lines.ts"
   },
   "tasks": {
-    "check": "ts:check rust:check python:check",
-    "fix": "ts:fix rust:fix python:fix",
-    "test": "ts:test rust:test python:test go:test",
-    "lint": "ts:lint rust:lint python:lint go:lint",
+    "check": "--concurrent ts:check rust:check python:check",
+    "fix": "--concurrent ts:fix rust:fix python:fix",
+    "test": "--concurrent ts:test rust:test python:test go:test",
+    "lint": "--concurrent ts:lint rust:lint python:lint go:lint",
     "ts:lint": "eslint",
     "ts:lint:fix": "eslint --fix",
     "ts:format:check": "prettier --check .",

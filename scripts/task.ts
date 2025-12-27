@@ -11,6 +11,11 @@ interface TaskContext {
   executing: Set<string>;
 }
 
+interface TaskDefinition {
+  concurrent: boolean;
+  tasks: string[];
+}
+
 const COLORS = {
   reset: "\x1b[0m",
   cyan: "\x1b[36m",
@@ -67,12 +72,20 @@ function showHelp(tasks: Record<string, string> | undefined): void {
   log("  bun task ts:lint");
 }
 
+function parseTaskDefinition(value: string): TaskDefinition {
+  const parts = value.trim().split(/\s+/);
+  const concurrent = parts[0] === "--concurrent";
+  const tasks = concurrent ? parts.slice(1) : parts;
+  return { concurrent, tasks };
+}
+
 function isTaskReference(
   value: string,
   allTasks: Record<string, string>,
 ): boolean {
-  const parts = value.trim().split(/\s+/);
-  return parts.every((part) =>
+  const { tasks } = parseTaskDefinition(value);
+  if (tasks.length === 0) return false;
+  return tasks.every((part) =>
     Object.prototype.hasOwnProperty.call(allTasks, part),
   );
 }
@@ -132,18 +145,32 @@ async function executeTask(
 
   // Check if this is a reference to other tasks
   if (isTaskReference(taskValue, tasks)) {
-    const referencedTasks = taskValue.trim().split(/\s+/);
+    const { concurrent, tasks: referencedTasks } =
+      parseTaskDefinition(taskValue);
 
+    const mode = concurrent ? "concurrently" : "sequentially";
     logInfo(
-      `Task ${colorize(taskName, "cyan")} references: ${referencedTasks.map((t) => colorize(t, "cyan")).join(", ")}`,
+      `Task ${colorize(taskName, "cyan")} references ${referencedTasks.map((t) => colorize(t, "cyan")).join(", ")} (${mode})`,
     );
 
-    // Execute referenced tasks sequentially
-    for (const refTask of referencedTasks) {
-      const exitCode = await executeTask(refTask, tasks, context);
-      if (exitCode !== 0) {
+    if (concurrent) {
+      // Execute referenced tasks concurrently
+      const results = await Promise.all(
+        referencedTasks.map((refTask) => executeTask(refTask, tasks, context)),
+      );
+      const firstFailure = results.find((code) => code !== 0);
+      if (firstFailure !== undefined) {
         context.executing.delete(taskName);
-        return exitCode;
+        return firstFailure;
+      }
+    } else {
+      // Execute referenced tasks sequentially
+      for (const refTask of referencedTasks) {
+        const exitCode = await executeTask(refTask, tasks, context);
+        if (exitCode !== 0) {
+          context.executing.delete(taskName);
+          return exitCode;
+        }
       }
     }
   } else {
