@@ -95,20 +95,56 @@ async function executeCommand(
   taskName: string,
 ): Promise<number> {
   logTask(
-    `Running ${colorize(taskName, "cyan")}: ${colorize(command, "gray")}`,
+    `[${colorize(taskName, "cyan")}] Running: ${colorize(command, "gray")}`,
   );
 
+  const tagPrefix = `[${taskName}] `;
+
   const process = Bun.spawn(["sh", "-c", command], {
-    stdout: "inherit",
-    stderr: "inherit",
+    stdout: "pipe",
+    stderr: "pipe",
     stdin: "inherit",
   });
+  // Read and tag stdout
+  const stdoutPromise = (async () => {
+    const reader = process.stdout.getReader();
+    for (;;) {
+      const result = await reader.read();
+      if (result.done) break;
+      const text = new TextDecoder().decode(result.value);
+      const lines = text.split("\n");
+      for (const line of lines) {
+        if (line.trim()) {
+          console.log(tagPrefix + line);
+        }
+      }
+    }
+  })();
+
+  // Read and tag stderr
+  const stderrPromise = (async () => {
+    const reader = process.stderr.getReader();
+    for (;;) {
+      const result = await reader.read();
+      if (result.done) break;
+      const text = new TextDecoder().decode(result.value);
+      const lines = text.split("\n");
+      for (const line of lines) {
+        if (line.trim()) {
+          console.error(tagPrefix + line);
+        }
+      }
+    }
+  })();
+
+  // Wait for both streams to finish
+  await Promise.all([stdoutPromise, stderrPromise]);
 
   const exitCode = await process.exited;
 
   if (exitCode !== 0) {
     logError(
-      `Task ${colorize(taskName, "cyan")} failed with exit code ${exitCode.toString()}`,
+      `[${colorize(taskName, "cyan")}] Failed with exit code ${exitCode.toString()}`,
     );
   }
 
@@ -123,7 +159,9 @@ async function executeTask(
   // Check for circular dependencies
   if (context.executing.has(taskName)) {
     const chain = Array.from(context.executing).join(" → ");
-    logError(`Circular dependency detected: ${chain} → ${taskName}`);
+    logError(
+      `[${colorize(taskName, "cyan")}] Circular dependency detected: ${chain} → ${taskName}`,
+    );
     return 1;
   }
 
@@ -137,7 +175,7 @@ async function executeTask(
   const taskValue = tasks[taskName];
 
   if (!taskValue) {
-    logError(`Unknown task: ${colorize(taskName, "cyan")}`);
+    logError(`[${colorize(taskName, "cyan")}] Unknown task`);
     return 1;
   }
 
@@ -150,7 +188,7 @@ async function executeTask(
 
     const mode = concurrent ? "concurrently" : "sequentially";
     logInfo(
-      `Task ${colorize(taskName, "cyan")} references ${referencedTasks.map((t) => colorize(t, "cyan")).join(", ")} (${mode})`,
+      `[${colorize(taskName, "cyan")}] References ${referencedTasks.map((t) => colorize(t, "cyan")).join(", ")} (${mode})`,
     );
 
     if (concurrent) {
