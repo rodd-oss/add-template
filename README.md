@@ -41,11 +41,45 @@ Show per‑file analysis:
 bun run count-lines --byfile
 ```
 
+### Task Runner
+
+This template includes a powerful task runner for managing multi-language operations:
+
+```bash
+# Run all checks across all languages
+bun task check
+
+# Run all fixes across all languages
+bun task fix
+
+# Run all tests across all languages
+bun task test
+
+# Run language-specific checks
+bun task ts:check
+bun task rust:check
+bun task python:check
+bun task go:check
+
+# View all available tasks
+bun task --help
+```
+
 ### Linting & Formatting
 
 ```bash
-bun run lint          # ESLint
+# JavaScript/TypeScript
+bun run lint              # ESLint
 bunx prettier --check .   # Prettier
+
+# Rust
+cargo check --all-targets
+cargo clippy --all-targets -- -D warnings
+cargo fmt --all -- --check
+
+# Python
+ruff check
+ruff format --check
 ```
 
 ## Workspace Structure
@@ -74,23 +108,54 @@ add-template/
 
 ## Available Scripts
 
-| Script                                      | Description                                                 |
-| ------------------------------------------- | ----------------------------------------------------------- |
-| `bun run count-lines`                       | Total lines of code (excludes `node_modules`, `.git`, etc.) |
-| `bun run count-lines --byfile`              | Per‑file breakdown with size categories                     |
-| `bun run lint`                              | Run ESLint on all supported files                           |
-| `bun run prepare`                           | Set up Husky git hooks                                      |
-| `cargo check --all‑targets`                 | Check all Rust crates (runs in pre‑commit)                  |
-| `cargo clippy --all‑targets -- -D warnings` | Lint Rust code                                              |
-| `cargo fmt --all -- --check`                | Verify Rust formatting                                      |
+| Script                                       | Description                                                 |
+| -------------------------------------------- | ----------------------------------------------------------- |
+| `bun run count-lines`                        | Total lines of code (excludes `node_modules`, `.git`, etc.) |
+| `bun run count-lines --byfile`               | Per‑file breakdown with size categories                     |
+| `bun run lint`                               | Run ESLint on all supported files                           |
+| `bun run prepare`                            | Set up Husky git hooks                                      |
+| `bunx prettier --check .`                    | Verify Prettier formatting                                  |
+| `bunx prettier --write .`                    | Auto-fix Prettier formatting                                |
+| `cargo check --all-targets`                  | Check all Rust crates                                       |
+| `cargo clippy --all-targets -- -D warnings`  | Lint Rust code                                              |
+| `cargo fmt --all -- --check`                 | Verify Rust formatting                                      |
+| `ruff check`                                 | Lint Python code                                            |
+| `ruff format --check`                        | Verify Python formatting                                    |
+| `cargo test`                                 | Run all Rust tests                                          |
+| `cargo test --package <crate> --test <test>` | Run specific Rust test                                      |
+| `go test ./...`                              | Run all Go tests                                            |
+| `bun test`                                   | Run JS/TS tests (when added)                                |
 
 ## Pre‑commit Hooks
 
 The template includes a Husky pre‑commit hook that automatically runs:
 
-1. `cargo check --all-targets`
-2. `cargo clippy --all-targets -- -D warnings`
-3. `cargo fmt --all -- --check`
+1. **lint-staged** - Runs Prettier and ESLint on staged JS/TS files
+2. **`bun task check`** - Concurrently runs all typechecks and linting:
+   - TypeScript: typecheck, ESLint, Prettier format check
+   - Rust: clippy, fmt check, cargo check
+   - Python: ruff check, ruff format check
+
+## Testing
+
+Run tests for specific languages:
+
+```bash
+# JavaScript/TypeScript
+bun test
+bun test --test-name-pattern <name>
+
+# Rust
+cargo test
+cargo test --package <crate> --test <test>
+
+# Go
+go test ./...
+go test -run TestName ./path/to/package
+
+# Python
+bun task python:test  # Configured via task runner
+```
 
 ## Configuration Files
 
