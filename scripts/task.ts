@@ -98,7 +98,7 @@ async function executeCommand(
     `[${colorize(taskName, "cyan")}] Running: ${colorize(command, "gray")}`,
   );
 
-  const tagPrefix = `[${taskName}] `;
+  const tagPrefix = `[${colorize(taskName, "cyan")}] `;
 
   const process = Bun.spawn(["sh", "-c", command], {
     stdout: "pipe",
@@ -115,8 +115,9 @@ async function executeCommand(
       const text = new TextDecoder().decode(result.value);
       const lines = text.split("\n");
       for (const line of lines) {
-        if (line.trim()) {
-          console.log(tagPrefix + line);
+        const trimmedLine = line.trim();
+        if (trimmedLine) {
+          console.log(tagPrefix + trimmedLine);
         }
       }
     }
@@ -131,8 +132,9 @@ async function executeCommand(
       const text = new TextDecoder().decode(result.value);
       const lines = text.split("\n");
       for (const line of lines) {
-        if (line.trim()) {
-          console.log(tagPrefix + line);
+        const trimmedLine = line.trim();
+        if (trimmedLine) {
+          console.log(tagPrefix + trimmedLine);
         }
       }
     }
