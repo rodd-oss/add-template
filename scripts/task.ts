@@ -105,7 +105,8 @@ async function executeCommand(
     stderr: "pipe",
     stdin: "inherit",
   });
-  // Read and tag stdout
+
+  // Read and tag stdout (write to stdout)
   const stdoutPromise = (async () => {
     const reader = process.stdout.getReader();
     for (;;) {
@@ -121,7 +122,7 @@ async function executeCommand(
     }
   })();
 
-  // Read and tag stderr
+  // Read and tag stderr (also write to stdout to avoid red color)
   const stderrPromise = (async () => {
     const reader = process.stderr.getReader();
     for (;;) {
@@ -131,7 +132,7 @@ async function executeCommand(
       const lines = text.split("\n");
       for (const line of lines) {
         if (line.trim()) {
-          console.error(tagPrefix + line);
+          console.log(tagPrefix + line);
         }
       }
     }
