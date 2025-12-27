@@ -28,17 +28,40 @@
   },
   "scripts": {
     "prepare": "husky",
-    "count-lines": "bun run ./scripts/count-lines.ts",
-    "lint": "bunx eslint"
+    "task": "bun run ./scripts/task.ts",
+    "count-lines": "bun run ./scripts/count-lines.ts"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": [
-        "cargo check --all-targets",
-        "cargo clippy --all-targets -- -D warnings",
-        "cargo fmt --all -- --check"
-      ]
-    }
+  "tasks": {
+    "check": "ts:check rust:check python:check",
+    "fix": "ts:fix rust:fix python:fix",
+    "test": "ts:test rust:test python:test go:test",
+    "lint": "ts:lint rust:lint python:lint go:lint",
+    "ts:lint": "eslint",
+    "ts:lint:fix": "eslint --fix",
+    "ts:format:check": "prettier --check .",
+    "ts:format:write": "prettier --write .",
+    "ts:typecheck": "tsc --noEmit",
+    "ts:check": "ts:lint ts:format:check ts:typecheck",
+    "ts:fix": "ts:lint:fix ts:format:write",
+    "ts:test": "bun test",
+    "rust:lint": "cargo clippy --all-targets -- -D warnings",
+    "rust:lint:fix": "cargo clippy --fix --allow-dirty --allow-staged",
+    "rust:format:check": "cargo fmt --all -- --check",
+    "rust:format:write": "cargo fmt --all",
+    "rust:typecheck": "cargo check --all-targets",
+    "rust:check": "rust:lint rust:format:check rust:typecheck",
+    "rust:fix": "rust:lint:fix rust:format:write",
+    "rust:test": "cargo test",
+    "python:lint": "uvx ruff check",
+    "python:lint:fix": "uvx ruff check --fix",
+    "python:format:check": "uvx ruff format --check",
+    "python:format:write": "uvx ruff format",
+    "python:check": "python:lint python:format:check",
+    "python:fix": "python:lint:fix python:format:write",
+    "python:test": "echo 'No Python tests configured'",
+    "go:lint": "go vet ./...",
+    "go:check": "go vet ./...",
+    "go:test": "go test ./..."
   },
   "lint-staged": {
     "**/*.{js,mjs,cjs,ts,mts,cts,vue,json,jsonc,json5,md,css}": [
