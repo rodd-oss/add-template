@@ -159,6 +159,8 @@ async function executeTask(
   tasks: Record<string, string>,
   context: TaskContext,
 ): Promise<number> {
+  const startTime = Date.now();
+
   // Check for circular dependencies
   if (context.executing.has(taskName)) {
     const chain = Array.from(context.executing).join(" → ");
@@ -184,6 +186,8 @@ async function executeTask(
 
   context.executing.add(taskName);
 
+  let exitCode = 0;
+
   // Check if this is a reference to other tasks
   if (isTaskReference(taskValue, tasks)) {
     const { concurrent, tasks: referencedTasks } =
@@ -201,30 +205,37 @@ async function executeTask(
       );
       const firstFailure = results.find((code) => code !== 0);
       if (firstFailure !== undefined) {
-        context.executing.delete(taskName);
-        return firstFailure;
+        exitCode = firstFailure;
       }
     } else {
       // Execute referenced tasks sequentially
       for (const refTask of referencedTasks) {
-        const exitCode = await executeTask(refTask, tasks, context);
+        exitCode = await executeTask(refTask, tasks, context);
         if (exitCode !== 0) {
-          context.executing.delete(taskName);
-          return exitCode;
+          break;
         }
       }
     }
   } else {
     // Execute as a command
-    const exitCode = await executeCommand(taskValue, taskName);
-    if (exitCode !== 0) {
-      context.executing.delete(taskName);
-      return exitCode;
-    }
+    exitCode = await executeCommand(taskValue, taskName);
   }
 
   context.executing.delete(taskName);
-  return 0;
+
+  // Log completion info
+  const duration = Date.now() - startTime;
+  if (exitCode === 0) {
+    logInfo(
+      `[${colorize(taskName, "cyan")}] ${colorize("✓", "green")} Completed in ${duration.toString()}ms`,
+    );
+  } else {
+    logInfo(
+      `[${colorize(taskName, "cyan")}] ${colorize("✗", "red")} Failed after ${duration.toString()}ms`,
+    );
+  }
+
+  return exitCode;
 }
 
 async function main() {
