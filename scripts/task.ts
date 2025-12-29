@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 
 import packageJson from "../package.json" with { type: "json" };
+const pkg: PackageJson = packageJson;
 
 interface PackageJson {
   tasks?: Record<string, string>;
@@ -243,17 +244,8 @@ async function main() {
 
   // Handle help flags
   if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
-    showHelp((packageJson as PackageJson).tasks);
+    showHelp(pkg.tasks);
     process.exit(0);
-  }
-
-  const taskName = args[0] as string;
-
-  const tasks = (packageJson as PackageJson).tasks;
-
-  if (!tasks) {
-    logError("No 'tasks' section found in package.json");
-    process.exit(1);
   }
 
   const context: TaskContext = {
@@ -261,7 +253,19 @@ async function main() {
     executing: new Set(),
   };
 
-  const exitCode = await executeTask(taskName, tasks, context);
+  if (!pkg.tasks) {
+    logError("No 'tasks' section found in package.json");
+    process.exit(1);
+  }
+
+  const taskName = args[0];
+
+  if (!taskName) {
+    logError("No task name provided");
+    process.exit(1);
+  }
+
+  const exitCode = await executeTask(taskName, pkg.tasks, context);
 
   if (exitCode === 0) {
     log(`${colorize("✓", "green")} All tasks completed successfully`);
@@ -271,6 +275,10 @@ async function main() {
 }
 
 main().catch((error: unknown) => {
-  logError((error as Error).message);
+  if (error instanceof Error) {
+    logError(error.message);
+  } else {
+    logError(String(error));
+  }
   process.exit(1);
 });

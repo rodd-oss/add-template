@@ -8,30 +8,34 @@ interface CountOptions {
   byfile?: boolean;
 }
 
+const categories = ["low", "normal", "high", "critical"] as const;
+
+type Category = (typeof categories)[number];
+
 const CATEGORY_THRESHOLDS = {
   LOW: 300,
   NORMAL: 600,
   HIGH: 1200,
 } as const;
 
-function categorizeLines(lineCount: number): string {
+function categorizeLines(lineCount: number): Category {
   if (lineCount <= CATEGORY_THRESHOLDS.LOW) return "low";
   if (lineCount <= CATEGORY_THRESHOLDS.NORMAL) return "normal";
   if (lineCount <= CATEGORY_THRESHOLDS.HIGH) return "high";
   return "critical";
 }
 
-function formatCategory(category: string): string {
+function formatCategory(category: Category): string {
   if (!process.stdout.isTTY) return category;
 
-  const colors = {
+  const colors: Record<Category, string> = {
     low: "\x1b[32m",
     normal: "\x1b[36m",
     high: "\x1b[33m",
     critical: "\x1b[31m",
   };
   const reset = "\x1b[0m";
-  return `${colors[category as keyof typeof colors]}${category}${reset}`;
+  return `${colors[category]}${category}${reset}`;
 }
 
 async function countLines(options: CountOptions = {}): Promise<void> {
@@ -54,8 +58,11 @@ async function countLines(options: CountOptions = {}): Promise<void> {
 
   let totalLines = 0;
   const fileCounts: Record<string, number> = {};
-  const fileDetails: Array<{ path: string; lines: number; category: string }> =
-    [];
+  const fileDetails: Array<{
+    path: string;
+    lines: number;
+    category: Category;
+  }> = [];
 
   for (const file of files) {
     try {
@@ -87,22 +94,25 @@ async function countLines(options: CountOptions = {}): Promise<void> {
       );
     }
 
-    const categorySummary = {
-      low: { files: 0, lines: 0 },
-      normal: { files: 0, lines: 0 },
-      high: { files: 0, lines: 0 },
-      critical: { files: 0, lines: 0 },
-    };
+    const categorySummary: Record<Category, { files: number; lines: number }> =
+      {
+        low: { files: 0, lines: 0 },
+        normal: { files: 0, lines: 0 },
+        high: { files: 0, lines: 0 },
+        critical: { files: 0, lines: 0 },
+      };
 
     for (const detail of fileDetails) {
-      const summary =
-        categorySummary[detail.category as keyof typeof categorySummary];
+      const summary = categorySummary[detail.category];
+
       summary.files += 1;
       summary.lines += detail.lines;
     }
 
     console.log("\nSummary:");
-    for (const [category, stats] of Object.entries(categorySummary)) {
+    for (const category of categories) {
+      const stats = categorySummary[category];
+
       if (stats.files > 0) {
         console.log(
           `  ${formatCategory(category)}: ${stats.files.toString()} file${stats.files === 1 ? "" : "s"} (${stats.lines.toString()} lines)`,
