@@ -5,7 +5,7 @@ A polyglot monorepo template for **Agent-Driven Development (ADD)** with built-i
 ## Features
 
 - **Multi‑language workspaces**: Rust (`packages/rust/`, `apps/`), Go (`packages/go/`, `apps/`), Python (`packages/python/`, `apps/`), JavaScript/TypeScript (`packages/js/`, `apps/`)
-- **Modern tooling**: ESLint, Prettier, Husky, lint‑staged, TypeScript, Cargo, Go modules, uv (Python)
+- **Modern tooling**: Ultracite (Biome), Husky, lint‑staged, TypeScript, Cargo, Go modules, uv (Python)
 - **Pre‑commit hooks**: Automated checks for Rust (`cargo check`, `cargo clippy`, `cargo fmt`)
 - **Line‑count utility**: Script to analyze codebase size and categorize files by line count
 - **Monorepo‑ready**: Workspace‑aware dependency management with Bun, Cargo, Go, and uv workspaces
@@ -69,8 +69,8 @@ bun task --help
 
 ```bash
 # JavaScript/TypeScript
-bun run lint              # ESLint
-bunx prettier --check .   # Prettier
+bun x ultracite check     # Ultracite (Biome) linting and formatting check
+bun x ultracite fix       # Auto-fix linting and formatting issues
 
 # Rust
 cargo check --all-targets
@@ -112,10 +112,10 @@ add-template/
 | -------------------------------------------- | ----------------------------------------------------------- |
 | `bun run count-lines`                        | Total lines of code (excludes `node_modules`, `.git`, etc.) |
 | `bun run count-lines --byfile`               | Per‑file breakdown with size categories                     |
-| `bun run lint`                               | Run ESLint on all supported files                           |
+| `bun x ultracite check`                      | Ultracite (Biome) linting and formatting check              |
 | `bun run prepare`                            | Set up Husky git hooks                                      |
-| `bunx prettier --check .`                    | Verify Prettier formatting                                  |
-| `bunx prettier --write .`                    | Auto-fix Prettier formatting                                |
+| `bun x ultracite fix`                        | Auto-fix linting and formatting issues                      |
+| `bun task lint`                              | Run all language linters concurrently                       |
 | `cargo check --all-targets`                  | Check all Rust crates                                       |
 | `cargo clippy --all-targets -- -D warnings`  | Lint Rust code                                              |
 | `cargo fmt --all -- --check`                 | Verify Rust formatting                                      |
@@ -130,9 +130,9 @@ add-template/
 
 The template includes a Husky pre‑commit hook that automatically runs:
 
-1. **lint-staged** - Runs Prettier and ESLint on staged JS/TS files
+1. **lint-staged** - Runs Prettier and ESLint on staged JS/TS files (for compatibility)
 2. **`bun task check`** - Concurrently runs all typechecks and linting:
-   - TypeScript: typecheck, ESLint, Prettier format check
+   - TypeScript: typecheck, Ultracite (Biome) linting and formatting check
    - Rust: clippy, fmt check, cargo check
    - Python: ruff check, ruff format check
 
@@ -164,8 +164,8 @@ bun task python:test  # Configured via task runner
 - **`go.work`** – Go workspace definition
 - **`pyproject.toml`** – Python workspace configuration (uv)
 - **`tsconfig.json`** – TypeScript compiler options
-- **`eslint.config.mts`** – ESLint flat config for JS/TS/JSON/Markdown/CSS/Vue
-- **`.prettierrc`** – Prettier formatting rules
+- **`biome.jsonc`** – Biome configuration extended with Ultracite presets
+- **`.prettierrc`** – Prettier configuration (empty, deprecated)
 - **`.husky/pre‑commit`** – Git hook script
 
 ## License

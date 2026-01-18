@@ -8,6 +8,7 @@
     "!packages/js/**/template/**"
   ],
   "devDependencies": {
+    "@biomejs/biome": "2.3.11",
     "@eslint/css": "^0.14.1",
     "@eslint/js": "^9.39.1",
     "@eslint/json": "^0.14.0",
@@ -21,7 +22,8 @@
     "jiti": "^2.6.1",
     "lint-staged": "^16.2.7",
     "prettier": "3.7.4",
-    "typescript-eslint": "^8.49.0"
+    "typescript-eslint": "^8.49.0",
+    "ultracite": "7.0.11"
   },
   "peerDependencies": {
     "typescript": "^5"
@@ -36,13 +38,8 @@
     "fix": "--concurrent ts:fix rust:fix python:fix",
     "test": "--concurrent ts:test rust:test python:test",
     "lint": "--concurrent ts:lint rust:lint python:lint",
-    "ts:lint": "eslint",
-    "ts:lint:fix": "eslint --fix",
-    "ts:format:check": "prettier --check .",
-    "ts:format:write": "prettier --write .",
-    "ts:typecheck": "tsc --noEmit",
-    "ts:check": "--concurrent ts:lint ts:format:check ts:typecheck",
-    "ts:fix": "ts:lint:fix ts:format:write",
+    "ts:check": "bun x ultracite check",
+    "ts:fix": "bun x ultracite fix",
     "ts:test": "bun test",
     "rust:lint": "cargo clippy --all-targets -- -D warnings",
     "rust:lint:fix": "cargo clippy --fix --allow-dirty --allow-staged",
@@ -65,8 +62,10 @@
   },
   "lint-staged": {
     "**/*.{js,mjs,cjs,ts,mts,cts,vue,json,jsonc,json5,md,css}": [
-      "prettier --list-different",
-      "eslint"
+      "bun x ultracite check"
+    ],
+    "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
+      "bun x ultracite fix"
     ]
   },
   "dependencies": {

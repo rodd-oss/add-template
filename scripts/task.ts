@@ -1,7 +1,6 @@
 #!/usr/bin/env bun
 
 import packageJson from "../package.json" with { type: "json" };
-const pkg: PackageJson = packageJson;
 
 interface PackageJson {
   tasks?: Record<string, string>;
@@ -27,8 +26,12 @@ const COLORS = {
   bold: "\x1b[1m",
 } as const;
 
+const WHITESPACE_REGEX = /\s+/;
+
 function colorize(text: string, color: keyof typeof COLORS): string {
-  if (!process.stdout.isTTY) return text;
+  if (!process.stdout.isTTY) {
+    return text;
+  }
   return `${COLORS[color]}${text}${COLORS.reset}`;
 }
 
@@ -49,7 +52,7 @@ function logTask(message: string): void {
 }
 
 function showHelp(tasks: Record<string, string> | undefined): void {
-  log(colorize("Usage:", "bold") + " bun task <taskname>");
+  log(`${colorize("Usage:", "bold")} bun task <taskname>`);
   log("");
   log(colorize("Available tasks:", "bold"));
 
@@ -59,7 +62,7 @@ function showHelp(tasks: Record<string, string> | undefined): void {
   }
 
   const maxTaskNameLength = Math.max(
-    ...Object.keys(tasks).map((name) => name.length),
+    ...Object.keys(tasks).map((name) => name.length)
   );
 
   for (const [name, command] of Object.entries(tasks)) {
@@ -74,7 +77,7 @@ function showHelp(tasks: Record<string, string> | undefined): void {
 }
 
 function parseTaskDefinition(value: string): TaskDefinition {
-  const parts = value.trim().split(/\s+/);
+  const parts = value.trim().split(WHITESPACE_REGEX);
   const concurrent = parts[0] === "--concurrent";
   const tasks = concurrent ? parts.slice(1) : parts;
   return { concurrent, tasks };
@@ -82,25 +85,26 @@ function parseTaskDefinition(value: string): TaskDefinition {
 
 function isTaskReference(
   value: string,
-  allTasks: Record<string, string>,
+  allTasks: Record<string, string>
 ): boolean {
   const { tasks } = parseTaskDefinition(value);
-  if (tasks.length === 0) return false;
-  return tasks.every((part) =>
-    Object.prototype.hasOwnProperty.call(allTasks, part),
-  );
+  if (tasks.length === 0) {
+    return false;
+  }
+  return tasks.every((part) => Object.hasOwn(allTasks, part));
 }
 
 async function executeCommand(
   command: string,
-  taskName: string,
+  taskName: string
 ): Promise<number> {
   logTask(
-    `[${colorize(taskName, "cyan")}] Running: ${colorize(command, "gray")}`,
+    `[${colorize(taskName, "cyan")}] Running: ${colorize(command, "gray")}`
   );
 
   const tagPrefix = `[${colorize(taskName, "cyan")}] `;
 
+  // biome-ignore lint/correctness/noUndeclaredVariables: Bun is a global in Bun runtime
   const process = Bun.spawn(["sh", "-c", command], {
     stdout: "pipe",
     stderr: "pipe",
@@ -112,7 +116,9 @@ async function executeCommand(
     const reader = process.stdout.getReader();
     for (;;) {
       const result = await reader.read();
-      if (result.done) break;
+      if (result.done) {
+        break;
+      }
       const text = new TextDecoder().decode(result.value);
       const lines = text.split("\n");
       for (const line of lines) {
@@ -129,7 +135,9 @@ async function executeCommand(
     const reader = process.stderr.getReader();
     for (;;) {
       const result = await reader.read();
-      if (result.done) break;
+      if (result.done) {
+        break;
+      }
       const text = new TextDecoder().decode(result.value);
       const lines = text.split("\n");
       for (const line of lines) {
@@ -148,7 +156,7 @@ async function executeCommand(
 
   if (exitCode !== 0) {
     logError(
-      `[${colorize(taskName, "cyan")}] Failed with exit code ${exitCode.toString()}`,
+      `[${colorize(taskName, "cyan")}] Failed with exit code ${exitCode.toString()}`
     );
   }
 
@@ -158,7 +166,7 @@ async function executeCommand(
 async function executeTask(
   taskName: string,
   tasks: Record<string, string>,
-  context: TaskContext,
+  context: TaskContext
 ): Promise<number> {
   const startTime = Date.now();
 
@@ -166,7 +174,7 @@ async function executeTask(
   if (context.executing.has(taskName)) {
     const chain = Array.from(context.executing).join(" → ");
     logError(
-      `[${colorize(taskName, "cyan")}] Circular dependency detected: ${chain} → ${taskName}`,
+      `[${colorize(taskName, "cyan")}] Circular dependency detected: ${chain} → ${taskName}`
     );
     return 1;
   }
@@ -196,27 +204,32 @@ async function executeTask(
 
     const mode = concurrent ? "concurrently" : "sequentially";
     logInfo(
-      `[${colorize(taskName, "cyan")}] References ${referencedTasks.map((t) => colorize(t, "cyan")).join(", ")} (${mode})`,
+      `[${colorize(taskName, "cyan")}] References ${referencedTasks.map((t) => colorize(t, "cyan")).join(", ")} (${mode})`
     );
 
-    if (concurrent) {
-      // Execute referenced tasks concurrently
-      const results = await Promise.all(
-        referencedTasks.map((refTask) => executeTask(refTask, tasks, context)),
-      );
-      const firstFailure = results.find((code) => code !== 0);
-      if (firstFailure !== undefined) {
-        exitCode = firstFailure;
+    async function executeReferencedTasks(): Promise<number> {
+      if (concurrent) {
+        // Execute referenced tasks concurrently
+        const results = await Promise.all(
+          referencedTasks.map((refTask) => executeTask(refTask, tasks, context))
+        );
+        const firstFailure = results.find((code) => code !== 0);
+        if (firstFailure !== undefined) {
+          return firstFailure;
+        }
+        return 0;
       }
-    } else {
       // Execute referenced tasks sequentially
       for (const refTask of referencedTasks) {
-        exitCode = await executeTask(refTask, tasks, context);
-        if (exitCode !== 0) {
-          break;
+        const refExitCode = await executeTask(refTask, tasks, context);
+        if (refExitCode !== 0) {
+          return refExitCode;
         }
       }
+      return 0;
     }
+
+    exitCode = await executeReferencedTasks();
   } else {
     // Execute as a command
     exitCode = await executeCommand(taskValue, taskName);
@@ -228,11 +241,11 @@ async function executeTask(
   const duration = Date.now() - startTime;
   if (exitCode === 0) {
     logInfo(
-      `[${colorize(taskName, "cyan")}] ${colorize("✓", "green")} Completed in ${duration.toString()}ms`,
+      `[${colorize(taskName, "cyan")}] ${colorize("✓", "green")} Completed in ${duration.toString()}ms`
     );
   } else {
     logInfo(
-      `[${colorize(taskName, "cyan")}] ${colorize("✗", "red")} Failed after ${duration.toString()}ms`,
+      `[${colorize(taskName, "cyan")}] ${colorize("✗", "red")} Failed after ${duration.toString()}ms`
     );
   }
 
@@ -244,8 +257,17 @@ async function main() {
 
   // Handle help flags
   if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
-    showHelp(pkg.tasks);
+    showHelp((packageJson as PackageJson).tasks);
     process.exit(0);
+  }
+
+  const taskName = args[0] as string;
+
+  const tasks = (packageJson as PackageJson).tasks;
+
+  if (!tasks) {
+    logError("No 'tasks' section found in package.json");
+    process.exit(1);
   }
 
   const context: TaskContext = {
@@ -253,19 +275,7 @@ async function main() {
     executing: new Set(),
   };
 
-  if (!pkg.tasks) {
-    logError("No 'tasks' section found in package.json");
-    process.exit(1);
-  }
-
-  const taskName = args[0];
-
-  if (!taskName) {
-    logError("No task name provided");
-    process.exit(1);
-  }
-
-  const exitCode = await executeTask(taskName, pkg.tasks, context);
+  const exitCode = await executeTask(taskName, tasks, context);
 
   if (exitCode === 0) {
     log(`${colorize("✓", "green")} All tasks completed successfully`);
@@ -275,10 +285,6 @@ async function main() {
 }
 
 main().catch((error: unknown) => {
-  if (error instanceof Error) {
-    logError(error.message);
-  } else {
-    logError(String(error));
-  }
+  logError((error as Error).message);
   process.exit(1);
 });
